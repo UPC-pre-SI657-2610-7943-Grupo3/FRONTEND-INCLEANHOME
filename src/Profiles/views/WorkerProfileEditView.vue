@@ -1,70 +1,76 @@
 <template>
-  <div class="max-w-2xl">
-    <h1 class="page-title mb-6">{{ t('nav.profile') }}</h1>
+  <div class="view-container">
+    <div class="view-header">
+      <h1 class="page-title">{{ t('nav.profile') }}</h1>
+    </div>
 
-    <div v-if="loading" class="flex justify-center py-16"><div class="spinner spinner-lg"></div></div>
+    <div v-if="loading" class="loader-wrapper">
+      <div class="spinner spinner-lg"></div>
+    </div>
 
-    <div v-else class="card">
-      <div class="text-center mb-6">
-        <div class="profile-avatar mx-auto mb-3 avatar-purple">
+    <div v-else class="card profile-card">
+      <div class="profile-header">
+        <div class="profile-avatar avatar-purple">
           <span class="avatar-initial">{{ initials }}</span>
         </div>
-        <h2 class="profile-heading">{{ auth.user?.name }}</h2>
-        <span class="badge badge-purple mt-1">{{ t('auth.worker') }}</span>
+        <h2 class="profile-name">{{ auth.user?.name }}</h2>
+        <span class="badge badge-purple">{{ t('auth.worker') }}</span>
       </div>
 
-      <div class="flex flex-col gap-4">
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="label">{{ t('auth.name') }}</label>
+      <div class="form-group-list">
+        <div class="grid-2-cols">
+          <div class="form-group">
+            <label class="label-bold">{{ t('auth.name') }}</label>
             <input v-model="form.name" class="input-field" />
           </div>
-          <div>
-            <label class="label">{{ t('auth.phone') }}</label>
+          <div class="form-group">
+            <label class="label-bold">{{ t('auth.phone') }}</label>
             <input v-model="form.phone" class="input-field" />
           </div>
         </div>
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="label">{{ t('worker.age') }}</label>
+        <div class="grid-2-cols">
+          <div class="form-group">
+            <label class="label-bold">{{ t('worker.age') }}</label>
             <input v-model.number="form.age" type="number" class="input-field" min="18" max="70" />
           </div>
-          <div>
-            <label class="label">{{ t('worker.experienceYears') }}</label>
+          <div class="form-group">
+            <label class="label-bold">{{ t('worker.experienceYears') }}</label>
             <input v-model.number="form.experienceYears" type="number" class="input-field" min="0" />
           </div>
         </div>
-        <div>
-          <label class="label">{{ t('worker.hourlyRate') }}</label>
-          <input v-model.number="form.hourlyRate" type="number" class="input-field" min="10" step="5" />
+        <div class="form-group">
+          <label class="label-bold">{{ t('worker.hourlyRate') }}</label>
+          <input v-model.number="form.hourlyRate" type="number" class="input-field input-small" min="10" step="5" />
         </div>
-        <div>
-          <label class="label">{{ t('worker.serviceTypes') }}</label>
-          <div class="flex flex-wrap gap-2">
-            <label v-for="svc in serviceOptions" :key="svc.value" class="flex items-center gap-1.5 cursor-pointer">
-              <input type="checkbox" :value="svc.value" v-model="form.serviceTypes" />
-              <span class="svc-label">{{ svc.label }}</span>
-            </label>
+        <div class="grid-2-cols">
+          <div class="form-group">
+            <label class="label-bold">{{ t('worker.serviceTypes') }}</label>
+            <div class="checkbox-list">
+              <label v-for="svc in serviceOptions" :key="svc.value" class="checkbox-item">
+                <input type="checkbox" :value="svc.value" v-model="form.serviceTypes" class="checkbox-input" />
+                <span class="svc-label">{{ svc.label }}</span>
+              </label>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="label-bold">{{ t('worker.zonesLabel') }}</label>
+             <div class="checkbox-list zones-scroll border-box">
+              <label v-for="z in zoneOptions" :key="z.value" class="checkbox-item">
+                <input type="checkbox" :value="z.value" v-model="form.zones" class="checkbox-input" />
+                 <span class="svc-label">{{ z.label }}</span>
+              </label>
+            </div>
           </div>
         </div>
-        <div>
-          <label class="label">{{ t('worker.zonesLabel') }}</label>
-           <div class="flex flex-wrap gap-2 zones-scroll">
-            <label v-for="z in zoneOptions" :key="z.value" class="flex items-center gap-1.5 cursor-pointer">
-              <input type="checkbox" :value="z.value" v-model="form.zones" />
-               <span class="svc-label">{{ z.label }}</span>
-            </label>
-          </div>
-        </div>
-        <div>
-          <label class="label">{{ t('worker.bio') }}</label>
-           <textarea v-model="form.bio" class="input-field no-resize" rows="3"></textarea>
+        <div class="form-group">
+          <label class="label-bold">{{ t('worker.bio') }}</label>
+           <textarea v-model="form.bio" class="input-field no-resize" rows="4"></textarea>
         </div>
 
-        <div v-if="success" class="success-box">✓ Perfil actualizado</div>
-        <div v-if="error" class="error-box">{{ error }}</div>
+        <div v-if="success" class="alert success-box">✓ Perfil actualizado</div>
+        <div v-if="error" class="alert error-box">⚠ {{ error }}</div>
 
-        <button @click="save" class="btn btn-primary btn-full" :disabled="saving">
+        <button @click="save" class="btn btn-primary btn-full submit-btn" :disabled="saving">
           <div v-if="saving" class="spinner spinner-sm"></div>
           {{ saving ? t('common.loading') : t('common.save') }}
         </button>
@@ -126,15 +132,137 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.profile-avatar { width:80px;height:80px;border-radius:50%;display:flex;align-items:center;justify-content:center; }
-.avatar-purple { background:#8b5cf6; }
-.avatar-initial { color:white; font-size:1.75rem; font-weight:700; }
-.profile-heading { font-size:1.25rem; font-weight:700; color:#1e293b; }
-.svc-label { font-size:0.8125rem; }
-.zones-scroll { max-height:120px; overflow-y:auto; }
-.no-resize { resize:none; }
-.success-box { background:#d1fae5; color:#065f46; padding:0.75rem; border-radius:0.5rem; font-size:0.875rem; }
-.error-box { background:#fee2e2; color:#991b1b; padding:0.75rem; border-radius:0.5rem; font-size:0.875rem; }
+.view-container {
+  max-width: 1024px;
+  margin: 1rem auto 0;
+}
+@media (min-width: 640px) {
+  .view-container { margin-top: 2rem; }
+}
+
+.view-header {
+  text-align: center;
+  margin-bottom: 2.5rem;
+}
+
+.page-title {
+  font-size: 1.875rem;
+  font-weight: 800;
+}
+
+.loader-wrapper {
+  display: flex;
+  justify-content: center;
+  padding: 4rem 0;
+}
+
+.profile-card {
+  max-width: 896px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+@media (min-width: 640px) {
+  .profile-card { padding: 3rem; }
+}
+
+.profile-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.profile-avatar { 
+  width: 80px; 
+  height: 80px; 
+  border-radius: 50%; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  margin: 0 auto 1rem;
+}
+.avatar-purple { background: #8b5cf6; }
+.avatar-initial { color: white; font-size: 1.75rem; font-weight: 700; }
+
+.profile-name { font-size: 1.5rem; font-weight: 700; color: #1e293b; margin-bottom: 0.25rem; }
+
+.form-group-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.grid-2-cols {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+@media (min-width: 768px) {
+  .grid-2-cols { grid-template-columns: repeat(2, 1fr); }
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.label-bold {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #475569;
+  margin-bottom: 0.25rem;
+}
+
+.input-small {
+  max-width: 320px;
+}
+
+.checkbox-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.border-box {
+  border: 1px solid #e2e8f0;
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+}
+
+.checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  padding: 0.375rem 0.5rem;
+  border-radius: 0.25rem;
+}
+.checkbox-item:hover { background-color: #f8fafc; }
+
+.checkbox-input {
+  width: 1rem;
+  height: 1rem;
+  accent-color: #8b5cf6;
+}
+
+.svc-label { font-size: 0.9375rem; }
+.zones-scroll { max-height: 120px; overflow-y: auto; }
+.no-resize { resize: none; }
+
+.alert {
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+}
+.success-box { background: #d1fae5; color: #065f46; }
+.error-box { background: #fee2e2; color: #991b1b; }
+
+.submit-btn {
+  padding: 0.75rem 0;
+  font-size: 1.125rem;
+  margin-top: 1rem;
+}
+
 .spinner { border: 3px solid rgba(0,0,0,0.08); border-top-color: #2563eb; border-radius:50%; width:28px; height:28px; animation: spin 1s linear infinite; }
 .spinner-lg { width:36px; height:36px; }
 .spinner-sm { width:18px; height:18px; border-width:2px; }

@@ -1,12 +1,12 @@
 <template>
-  <div class="max-w-2xl">
+  <div class="view-container max-w-2xl">
     <h1 class="page-title mb-2">{{ t('nav.availability') }}</h1>
     <p class="page-subtitle mb-6">Configura los días y horarios en que puedes trabajar</p>
 
     <div class="card">
-      <div class="flex flex-col gap-4">
+      <div class="day-list">
         <div v-for="(day, index) in days" :key="index" class="day-row">
-          <div class="flex items-center gap-3">
+          <div class="day-toggle-container">
             <!-- Toggle -->
             <button @click="toggleDay(index)"
               :class="['toggle', slots[index]?.isAvailable ? 'toggle-on' : 'toggle-off']">
@@ -15,7 +15,7 @@
             <span class="day-label">{{ day }}</span>
           </div>
 
-          <div v-if="slots[index]?.isAvailable" class="flex items-center gap-2 flex-1">
+          <div v-if="slots[index]?.isAvailable" class="time-select-container">
             <select v-model="slots[index].startTime" class="input-field time-select">
               <option v-for="h in timeSlots" :key="h" :value="h">{{ h }}</option>
             </select>
@@ -28,9 +28,9 @@
         </div>
       </div>
 
-      <div v-if="error" class="error-box">{{ error }}</div>
+      <div v-if="error" class="alert error-box">{{ error }}</div>
 
-        <button @click="saveAvailability" class="btn btn-primary btn-full mt-6" :disabled="saving">
+        <button @click="saveAvailability" class="btn btn-primary btn-full submit-btn" :disabled="saving">
             <div v-if="saving" class="spinner spinner-sm"></div>
         {{ saving ? t('common.loading') : t('common.save') }}
       </button>
@@ -92,25 +92,78 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.day-row { display:flex;align-items:center;gap:1rem;padding:0.75rem 0;border-bottom:1px solid #f1f5f9; }
+.view-container {
+  padding: 1rem;
+  margin: 0 auto;
+}
+.max-w-2xl { max-width: 672px; }
+@media (min-width: 640px) {
+  .view-container { padding: 2rem 0; }
+}
+
+.page-title {
+  font-size: 1.875rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+.mb-2 { margin-bottom: 0.5rem; }
+.mb-6 { margin-bottom: 1.5rem; }
+.page-subtitle { color: #64748b; font-size: 1.125rem; }
+
+.day-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.day-row { display:flex;align-items:center;gap:1rem;padding:0.75rem 0;border-bottom:1px solid #f1f5f9; flex-wrap: wrap; }
+@media (min-width: 640px) {
+  .day-row { flex-wrap: nowrap; }
+}
 .day-row:last-child { border-bottom:none; }
+
+.day-toggle-container {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+}
+@media (min-width: 640px) {
+  .day-toggle-container { width: auto; min-width: 160px; }
+}
+
 .toggle { width:44px;height:24px;border-radius:12px;border:none;cursor:pointer;position:relative;transition:background 0.2s;flex-shrink:0; }
 .toggle-on { background:#2563eb; }
 .toggle-off { background:#e2e8f0; }
 .toggle-knob { width:18px;height:18px;border-radius:50%;background:white;position:absolute;top:3px;transition:left 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2); }
 .knob-on { left:23px; }
 .knob-off { left:3px; }
-.day-label { font-weight:600; color:#1e293b; min-width:80px; }
-.time-select { flex: 1; }
+.day-label { font-weight:600; color:#1e293b; }
+
+.time-select-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+  width: 100%;
+}
+@media (min-width: 640px) {
+  .time-select-container { width: auto; }
+}
+
+.time-select { flex: 1; min-width: 100px; }
 .until-text { color:#94a3b8; font-size:0.875rem; }
 .unavailable-text { flex:1; font-size:0.875rem; color:#94a3b8; }
-.error-box { background:#fee2e2; color:#991b1b; padding:0.75rem; border-radius:0.5rem; font-size:0.875rem; margin-top:1rem; }
+
+.alert { padding: 0.75rem; border-radius: 0.5rem; font-size: 0.875rem; margin-top: 1rem; }
+.error-box { background:#fee2e2; color:#991b1b; }
+
+.submit-btn {
+  margin-top: 1.5rem;
+}
+
 .spinner { border: 3px solid rgba(0,0,0,0.08); border-top-color: #2563eb; border-radius:50%; width:28px; height:28px; animation: spin 1s linear infinite; }
-.spinner-sm { width:18px; height:18px; border-width:2px; }
+.spinner-sm { width:18px; height:18px; border-width:2px; display: inline-block; margin-right: 0.5rem; }
 
 @keyframes spin { to { transform: rotate(360deg); } }
-
-@media (max-width: 640px) {
-  .max-w-2xl { padding: 0 1rem; }
-}
 </style>

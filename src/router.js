@@ -68,7 +68,12 @@ router.beforeEach((to) => {
   } else if (to.meta.requiresAuth) {
     if (!auth.isLoggedIn) return "/login";
     if (to.meta.role && auth.user?.role !== to.meta.role) {
-      return auth.user?.role === "worker" ? "/worker/dashboard" : "/client/search";
+      const targetPath = auth.user?.role === "worker" ? "/worker/dashboard" : "/client/search";
+      if (to.path === targetPath) {
+        auth.clearAuth();
+        return "/login";
+      }
+      return targetPath;
     }
     return true;
   }

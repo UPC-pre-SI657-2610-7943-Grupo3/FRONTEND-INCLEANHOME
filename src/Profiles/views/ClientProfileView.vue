@@ -1,35 +1,40 @@
 <template>
-  <div class="max-w-lg">
-    <h1 class="page-title mb-6">{{ t('nav.profile') }}</h1>
+  <div class="view-container">
+    <div class="view-header">
+      <h1 class="page-title">{{ t('nav.profile') }}</h1>
+    </div>
 
-    <div v-if="loading" class="flex justify-center py-12">
+    <div v-if="loading" class="loader-wrapper">
       <div class="spinner spinner-lg"></div>
     </div>
 
-    <div v-else class="card">
-      <div class="text-center mb-6">
-        <div class="profile-avatar mx-auto mb-3 avatar-blue">
+    <div v-else class="card profile-card">
+      <div class="profile-header">
+        <div class="profile-avatar avatar-blue">
           <span class="avatar-initial">{{ initials }}</span>
         </div>
-        <h2 class="profile-heading">{{ form.name }}</h2>
-        <span class="badge badge-blue mt-1">{{ t('auth.client') }}</span>
+        <h2 class="profile-name">{{ form.name }}</h2>
+        <span class="badge badge-blue">{{ t('auth.client') }}</span>
       </div>
-      <div class="flex flex-col gap-4">
-        <div>
-          <label class="label">{{ t('auth.name') }}</label>
+      
+      <div class="form-group-list">
+        <div class="form-group">
+          <label class="label-bold">{{ t('auth.name') }}</label>
           <input v-model="form.name" class="input-field" />
         </div>
-        <div>
-          <label class="label">{{ t('auth.email') }}</label>
+        <div class="form-group">
+          <label class="label-bold">{{ t('auth.email') }}</label>
           <input :value="auth.user?.email" class="input-field input-disabled" disabled />
         </div>
-        <div>
-          <label class="label">{{ t('auth.phone') }}</label>
+        <div class="form-group">
+          <label class="label-bold">{{ t('auth.phone') }}</label>
           <input v-model="form.phone" class="input-field" />
         </div>
-        <div v-if="error" class="error-box">⚠ {{ error }}</div>
-        <div v-if="success" class="success-box">✓ {{ t('common.success') }}</div>
-        <button @click="save" class="btn btn-primary btn-full" :disabled="saving">
+        
+        <div v-if="error" class="alert error-box">⚠ {{ error }}</div>
+        <div v-if="success" class="alert success-box">✓ {{ t('common.success') }}</div>
+        
+        <button @click="save" class="btn btn-primary btn-full submit-btn" :disabled="saving">
           {{ saving ? t('common.loading') : t('common.save') }}
         </button>
       </div>
@@ -78,7 +83,6 @@ async function save() {
       phone: form.value.phone
     });
 
-    // Actualizar el auth store con los nuevos datos
     const updatedUser = { ...auth.user, ...data };
     auth.user = updatedUser;
     localStorage.setItem("inclean_user", JSON.stringify(updatedUser));
@@ -94,21 +98,96 @@ async function save() {
 </script>
 
 <style scoped>
-.profile-avatar { width:80px; height:80px; border-radius:50%; display:flex; align-items:center; justify-content:center; }
-.avatar-blue { background:#2563eb; }
-.avatar-initial { color:white; font-size:1.75rem; font-weight:700; }
-.profile-heading { font-size:1.25rem; font-weight:700; color:#1e293b; }
-.input-disabled { background:#f8fafc; cursor:not-allowed; }
-.success-box { background:#d1fae5; color:#065f46; padding:0.75rem; border-radius:0.5rem; font-size:0.875rem; }
-.error-box { background:#fee2e2; color:#991b1b; padding:0.75rem; border-radius:0.5rem; font-size:0.875rem; }
-.spinner { border: 3px solid rgba(0,0,0,0.08); border-top-color: #2563eb; border-radius:50%; width:28px; height:28px; animation: spin 1s linear infinite; }
-.spinner-lg { width:36px; height:36px; }
+.view-container {
+  max-width: 896px;
+  margin: 1rem auto 0;
+}
+@media (min-width: 640px) {
+  .view-container { margin-top: 2rem; }
+}
 
-@keyframes spin { to { transform: rotate(360deg); } }
+.view-header {
+  text-align: center;
+  margin-bottom: 2.5rem;
+}
+
+.page-title {
+  font-size: 1.875rem;
+  font-weight: 800;
+}
+
+.loader-wrapper {
+  display: flex;
+  justify-content: center;
+  padding: 3rem 0;
+}
+
+.profile-card {
+  max-width: 672px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+@media (min-width: 640px) {
+  .profile-card { padding: 3rem; }
+}
+
+.profile-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.profile-avatar { 
+  width: 80px; 
+  height: 80px; 
+  border-radius: 50%; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  margin: 0 auto 1rem;
+}
+.avatar-blue { background: #2563eb; }
+.avatar-initial { color: white; font-size: 1.75rem; font-weight: 700; }
+
+.profile-name { font-size: 1.5rem; font-weight: 700; color: #1e293b; margin-bottom: 0.25rem; }
+
+.form-group-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.label-bold {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.input-disabled { background: #f8fafc; cursor: not-allowed; }
+
+.alert {
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+}
+.success-box { background: #d1fae5; color: #065f46; }
+.error-box { background: #fee2e2; color: #991b1b; }
+
+.submit-btn {
+  padding: 0.75rem 0;
+  font-size: 1.125rem;
+  margin-top: 1rem;
+}
 
 @media (max-width: 640px) {
-  .profile-avatar { width:70px; height:70px; }
-  .avatar-initial { font-size:1.5rem; }
-  .profile-heading { font-size:1.125rem; }
+  .profile-avatar { width: 70px; height: 70px; }
+  .avatar-initial { font-size: 1.5rem; }
+  .profile-name { font-size: 1.25rem; }
 }
 </style>

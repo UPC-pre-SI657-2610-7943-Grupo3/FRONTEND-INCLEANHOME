@@ -1,25 +1,25 @@
 <template>
-  <div>
+  <div class="view-container max-w-4xl">
     <h1 class="page-title mb-6">{{ t('messages.title') }}</h1>
 
-    <div v-if="loading" class="flex justify-center py-16"><div class="spinner spinner-lg"></div></div>
+    <div v-if="loading" class="loader-wrapper"><div class="spinner spinner-lg"></div></div>
 
-    <div v-else-if="!conversations.length" class="text-center py-16 card empty-state">
+    <div v-else-if="!conversations.length" class="card empty-state">
       <div class="empty-illustration">💬</div>
-      <p class="empty-text mb-2">{{ t('messages.noConversations') }}</p>
+      <p class="empty-text">{{ t('messages.noConversations') }}</p>
       <p class="empty-subtext">{{ t('messages.startConversation') }}</p>
     </div>
 
-    <div v-else class="flex flex-col gap-2">
+    <div v-else class="conv-list">
       <router-link
         v-for="c in conversations" :key="c.userId"
         :to="`${baseRoute}/${c.userId}`"
-        class="card flex items-center gap-4 no-underline hover:shadow-md transition-shadow message-link">
+        class="card conv-card message-link">
         <div class="conv-avatar" :style="{ background: getColor(c.userId) }">
           <span class="conv-initial">{{ (c.userName || '?')[0] }}</span>
         </div>
-        <div class="flex-1 min-w-0">
-          <div class="flex items-center justify-between">
+        <div class="conv-info">
+          <div class="conv-header">
             <span class="conv-name">{{ c.userName }}</span>
             <span class="conv-time">{{ formatTime(c.lastMessageAt) }}</span>
           </div>
@@ -58,18 +58,44 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.empty-state .empty-illustration { font-size:3rem; margin-bottom:1rem; }
-.empty-text { color:#64748b; margin-bottom:0.5rem; }
-.empty-subtext { font-size:0.875rem; color:#94a3b8; }
-.message-link { cursor:pointer; text-decoration:none; }
-.conv-avatar { width:48px; height:48px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-.conv-initial { color:white; font-weight:700; font-size:1.125rem; }
-.conv-name { font-weight:700; color:#1e293b; }
-.conv-time { font-size:0.75rem; color:#94a3b8; }
-.conv-last { font-size:0.875rem; color:#64748b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.unread-count { background:#2563eb; color:white; border-radius:9999px; min-width:22px; height:22px; display:flex; align-items:center; justify-content:center; font-size:0.75rem; font-weight:700; padding:0 6px; }
-.spinner { border: 3px solid rgba(0,0,0,0.08); border-top-color: #2563eb; border-radius:50%; width:28px; height:28px; animation: spin 1s linear infinite; }
-.spinner-lg { width:36px; height:36px; }
+.view-container { max-width: 896px; margin: 0 auto; }
+.page-title { font-size: 1.875rem; font-weight: 800; color: #0f172a; }
+.mb-6 { margin-bottom: 1.5rem; }
 
+.loader-wrapper { display: flex; justify-content: center; padding: 4rem 0; }
+.empty-state { text-align: center; padding: 4rem 0; }
+.empty-illustration { font-size: 3rem; margin-bottom: 1rem; }
+.empty-text { color: #64748b; margin-bottom: 0.5rem; font-size: 1.125rem; font-weight: 500; }
+.empty-subtext { font-size: 0.875rem; color: #94a3b8; }
+
+.conv-list { display: flex; flex-direction: column; gap: 0.75rem; }
+
+.conv-card { 
+  display: flex; 
+  align-items: center; 
+  gap: 1rem; 
+  padding: 1rem; 
+  transition: transform 0.2s, box-shadow 0.2s; 
+}
+.conv-card:hover { 
+  transform: translateY(-2px); 
+  box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); 
+}
+
+.message-link { cursor: pointer; text-decoration: none; }
+
+.conv-avatar { width: 48px; height: 48px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.conv-initial { color: white; font-weight: 700; font-size: 1.125rem; }
+
+.conv-info { flex: 1; min-width: 0; }
+.conv-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem; }
+.conv-name { font-weight: 700; color: #1e293b; }
+.conv-time { font-size: 0.75rem; color: #94a3b8; }
+.conv-last { font-size: 0.875rem; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0; }
+
+.unread-count { background: #2563eb; color: white; border-radius: 9999px; min-width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; padding: 0 6px; }
+
+.spinner { border: 3px solid rgba(0,0,0,0.08); border-top-color: #2563eb; border-radius: 50%; width: 28px; height: 28px; animation: spin 1s linear infinite; }
+.spinner-lg { width: 36px; height: 36px; }
 @keyframes spin { to { transform: rotate(360deg); } }
 </style>
