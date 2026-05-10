@@ -56,6 +56,8 @@ import { useAuthStore } from "../../Shared/stores/auth.js";
 import api from "../../Shared/api.js";
 
 const { t, locale } = useI18n();
+// Importación del store de autenticación (Pinia) y configuración de Axios (api)
+import { useAuthStore } from "../../Shared/stores/auth.js";
 const router = useRouter();
 const auth = useAuthStore();
 
