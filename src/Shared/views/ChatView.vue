@@ -93,7 +93,8 @@ onMounted(async () => {
 .chat-container { 
   display: flex; 
   flex-direction: column; 
-  height: calc(100vh - 120px); 
+  height: calc(100vh - 220px);
+  min-height: 400px;
   max-width: 800px; 
   margin: 0 auto; 
 }
