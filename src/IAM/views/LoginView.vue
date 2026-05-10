@@ -48,6 +48,7 @@
 </template>
 
 <script setup>
+// Importación de utilidades de Vue y librerías externas
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
