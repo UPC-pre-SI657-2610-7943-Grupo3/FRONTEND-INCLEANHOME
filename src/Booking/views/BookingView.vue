@@ -1,0 +1,287 @@
+<template>
+  <div class="max-w-2xl mx-auto">
+    <button @click="$router.back()" class="btn btn-secondary btn-sm mb-4">← {{ t('common.back') }}</button>
+    <h1 class="page-title mb-6">{{ t('booking.title') }}</h1>
+
+    <div v-if="workerLoading" class="flex justify-center py-8"><div class="spinner"></div></div>
+
+    <div v-else class="flex flex-col gap-5">
+      <!-- Worker summary -->
+      <div class="card flex items-center gap-4 worker-summary">
+        <div class="worker-avatar-md avatar-blue">
+          <span class="avatar-initial">{{ initials }}</span>
+        </div>
+        <div>
+          <div class="worker-name">{{ worker?.name }}</div>
+          <div class="worker-rate">S/. {{ worker?.hourlyRate }}/hora</div>
+        </div>
+      </div>
+
+      <!-- Service type -->
+      <div class="card">
+        <label class="label">{{ t('booking.serviceType') }}</label>
+        <select v-model="form.serviceType" class="input-field">
+          <option v-for="svc in worker?.serviceTypes || []" :key="svc" :value="svc">{{ t(`worker.services.${svc}`) }}</option>
+        </select>
+      </div>
+
+      <!-- Date & time -->
+      <div class="card">
+        <h3 class="card-subtitle">📅 {{ t('booking.selectDate') }}</h3>
+        <div class="calendar">
+          <div class="cal-header">
+            <button @click="prevMonth" class="cal-nav">‹</button>
+            <span class="month-label">{{ monthLabel }}</span>
+            <button @click="nextMonth" class="cal-nav">›</button>
+          </div>
+          <div class="cal-days">
+            <span v-for="d in ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb']" :key="d" class="cal-day-label">{{ d }}</span>
+          </div>
+          <div class="cal-grid">
+            <div v-for="blank in startBlank" :key="'b'+blank"></div>
+            <button v-for="day in daysInMonth" :key="day"
+              @click="selectDay(day)"
+              :disabled="isPast(day)"
+              :class="['cal-day', selectedDay === day ? 'cal-day-selected' : '', isPast(day) ? 'cal-day-disabled' : 'cal-day-active']">
+              {{ day }}
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3 mt-4">
+          <div>
+            <label class="label">{{ t('booking.startTime') }}</label>
+            <select v-model="form.startTime" class="input-field" @change="calcHours">
+              <option v-for="h in timeSlots" :key="h" :value="h">{{ h }}</option>
+            </select>
+          </div>
+          <div>
+            <label class="label">{{ t('booking.endTime') }}</label>
+            <select v-model="form.endTime" class="input-field" @change="calcHours">
+              <option v-for="h in timeSlots" :key="h" :value="h">{{ h }}</option>
+            </select>
+          </div>
+        </div>
+
+        <div v-if="form.hours > 0" class="hours-info">{{ form.hours }} {{ t('booking.hours') }}</div>
+      </div>
+
+      <!-- Address -->
+      <div class="card">
+        <label class="label">{{ t('booking.address') }}</label>
+        <input v-model="form.address" type="text" class="input-field" :placeholder="t('booking.address')" />
+        <label class="label mt-label">{{ t('booking.notes') }}</label>
+        <textarea v-model="form.notes" class="input-field no-resize" rows="2"></textarea>
+      </div>
+
+      <!-- Payment method -->
+      <div class="card">
+        <h3 class="card-subtitle">💳 {{ t('booking.paymentMethod') }}</h3>
+          <div v-if="paymentMethods.length === 0" class="text-center py-4">
+            <p class="muted-text mb-3">No tienes métodos de pago guardados</p>
+            <button @click="showAddPayment = true" class="btn btn-outline btn-sm">+ {{ t('booking.addPaymentMethod') }}</button>
+          </div>
+        <div v-else class="flex flex-col gap-2">
+          <label v-for="pm in paymentMethods" :key="pm.id" class="payment-option" :class="{ selected: form.paymentMethodId === pm.id }" @click="form.paymentMethodId = pm.id">
+            <span class="payment-icon">{{ paymentIcon(pm.type) }}</span>
+            <div>
+              <div class="pm-label">{{ pm.label }}</div>
+              <div v-if="pm.details" class="pm-details">{{ pm.details }}</div>
+            </div>
+            <div class="ml-auto">
+              <div :class="['radio-circle', form.paymentMethodId === pm.id ? 'radio-selected' : '']"></div>
+            </div>
+          </label>
+          <button @click="showAddPayment = true" class="btn btn-outline btn-sm mt-2">+ {{ t('booking.addPaymentMethod') }}</button>
+        </div>
+
+        <!-- Add payment modal -->
+        <div v-if="showAddPayment" class="modal-overlay" @click.self="showAddPayment = false">
+          <div class="modal-box">
+            <h3 class="card-title">{{ t('booking.addPaymentMethod') }}</h3>
+            <select v-model="newPm.type" class="input-field mb-3">
+              <option v-for="(lbl, val) in paymentTypes" :key="val" :value="val">{{ paymentIcon(val) }} {{ lbl }}</option>
+            </select>
+            <input v-model="newPm.label" class="input-field mb-3" :placeholder="t('booking.paymentMethod')" />
+            <input v-model="newPm.details" class="input-field mb-4" placeholder="Detalles opcionales" />
+            <div class="flex gap-3">
+              <button @click="showAddPayment = false" class="btn btn-secondary flex-1">{{ t('common.cancel') }}</button>
+              <button @click="addPaymentMethod" class="btn btn-primary flex-1">{{ t('common.save') }}</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Summary -->
+      <div class="card summary-card">
+        <h3 class="card-title">Resumen</h3>
+        <div class="summary-row"><span>{{ form.hours }}h × S/. {{ worker?.hourlyRate }}</span><span>S/. {{ subtotal.toFixed(2) }}</span></div>
+        <div class="summary-row summary-warning"><span>{{ t('booking.platformFee') }}</span><span>- S/. {{ platformFee.toFixed(2) }}</span></div>
+        <div class="summary-row summary-success"><span>{{ t('booking.workerEarning') }}</span><span>S/. {{ workerEarning.toFixed(2) }}</span></div>
+        <div class="summary-total">
+          <span class="total-label">{{ t('booking.total') }}</span>
+          <span class="total-amount">S/. {{ subtotal.toFixed(2) }}</span>
+        </div>
+      </div>
+
+      <div v-if="error" class="error-box">{{ error }}</div>
+
+      <button @click="handleBook" class="btn btn-primary btn-full btn-lg" :disabled="!canBook || submitting">
+        <div v-if="submitting" class="spinner spinner-sm"></div>
+        {{ submitting ? t('common.loading') : t('booking.confirm') }}
+      </button>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed, onMounted } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import { useI18n } from "vue-i18n";
+import { useToastStore } from "../../Shared/stores/toast.js";
+import api from "../../Shared/api.js";
+
+const { t } = useI18n();
+const route = useRoute();
+const router = useRouter();
+const toast = useToastStore();
+
+const worker = ref(null);
+const workerLoading = ref(true);
+const paymentMethods = ref([]);
+const submitting = ref(false);
+const error = ref("");
+const showAddPayment = ref(false);
+
+const today = new Date();
+const viewYear = ref(today.getFullYear());
+const viewMonth = ref(today.getMonth());
+const selectedDay = ref(null);
+
+const form = ref({ serviceType: "", startTime: "08:00", endTime: "10:00", address: "", notes: "", paymentMethodId: null, hours: 2 });
+const newPm = ref({ type: "cash", label: "", details: "" });
+
+const paymentTypes = computed(() => ({
+  cash: t("booking.paymentTypes.cash"), card: t("booking.paymentTypes.card"),
+  yape: t("booking.paymentTypes.yape"), plin: t("booking.paymentTypes.plin"),
+  bank_transfer: t("booking.paymentTypes.bank_transfer"),
+}));
+
+const initials = computed(() => worker.value?.name?.split(" ").map(n => n[0]).slice(0,2).join("").toUpperCase() || "?");
+const subtotal = computed(() => (worker.value?.hourlyRate || 0) * form.value.hours);
+const platformFee = computed(() => subtotal.value * 0.10);
+const workerEarning = computed(() => subtotal.value - platformFee.value);
+const canBook = computed(() => selectedDay.value && form.value.serviceType && form.value.address && form.value.paymentMethodId && form.value.hours > 0);
+
+const monthLabel = computed(() => new Date(viewYear.value, viewMonth.value).toLocaleDateString("es-PE", { month:"long", year:"numeric" }));
+const daysInMonth = computed(() => new Date(viewYear.value, viewMonth.value + 1, 0).getDate());
+const startBlank = computed(() => new Date(viewYear.value, viewMonth.value, 1).getDay());
+const timeSlots = Array.from({ length: 25 }, (_, i) => `${String(Math.floor(i + 6)).padStart(2,"0")}:00`);
+
+function prevMonth() { if (viewMonth.value === 0) { viewMonth.value = 11; viewYear.value--; } else viewMonth.value--; }
+function nextMonth() { if (viewMonth.value === 11) { viewMonth.value = 0; viewYear.value++; } else viewMonth.value++; }
+function selectDay(d) { selectedDay.value = d; }
+function isPast(d) {
+  const date = new Date(viewYear.value, viewMonth.value, d);
+  return date < new Date(today.getFullYear(), today.getMonth(), today.getDate());
+}
+function calcHours() {
+  const [sh, sm] = form.value.startTime.split(":").map(Number);
+  const [eh, em] = form.value.endTime.split(":").map(Number);
+  form.value.hours = Math.max(0, (eh * 60 + em - sh * 60 - sm) / 60);
+}
+function paymentIcon(type) {
+  return { cash:"💵", card:"💳", yape:"📱", plin:"📲", bank_transfer:"🏦" }[type] || "💰";
+}
+
+async function addPaymentMethod() {
+  const { data } = await api.post("/payments/methods", newPm.value);
+  paymentMethods.value.push(data);
+  form.value.paymentMethodId = data.id;
+  showAddPayment.value = false;
+  newPm.value = { type:"cash", label:"", details:"" };
+}
+
+async function handleBook() {
+  submitting.value = true;
+  error.value = "";
+  try {
+    const dateStr = `${viewYear.value}-${String(viewMonth.value+1).padStart(2,"0")}-${String(selectedDay.value).padStart(2,"0")}`;
+    await api.post("/bookings", {
+      workerId: parseInt(route.params.id),
+      serviceType: form.value.serviceType,
+      date: dateStr,
+      startTime: form.value.startTime,
+      endTime: form.value.endTime,
+      hours: form.value.hours,
+      paymentMethodId: form.value.paymentMethodId,
+      address: form.value.address,
+      notes: form.value.notes,
+    });
+    toast.success(t("booking.bookingSuccess"));
+    router.push("/client/bookings");
+  } catch (e) {
+    error.value = e.response?.data?.error || t("common.error");
+  } finally { submitting.value = false; }
+}
+
+onMounted(async () => {
+  const id = route.params.id;
+  const [w, pm] = await Promise.all([api.get(`/workers/${id}`), api.get("/payments/methods")]);
+  worker.value = w.data;
+  paymentMethods.value = pm.data;
+  if (w.data.serviceTypes?.length) form.value.serviceType = w.data.serviceTypes[0];
+  workerLoading.value = false;
+});
+</script>
+
+<style scoped>
+.worker-avatar-md { width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center; }
+.calendar { border:1px solid #e2e8f0;border-radius:0.75rem;overflow:hidden; }
+.cal-header { display:flex;align-items:center;justify-content:space-between;padding:0.75rem 1rem;background:#f8fafc;border-bottom:1px solid #e2e8f0; }
+.cal-nav { background:none;border:none;cursor:pointer;font-size:1.25rem;color:#64748b;width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center; }
+.cal-nav:hover { background:#e2e8f0; }
+.cal-days { display:grid;grid-template-columns:repeat(7,1fr);padding:0.5rem 0.5rem 0; }
+.cal-day-label { text-align:center;font-size:0.75rem;font-weight:600;color:#94a3b8;padding:0.25rem; }
+.cal-grid { display:grid;grid-template-columns:repeat(7,1fr);gap:2px;padding:0.5rem; }
+.cal-day { height:34px;border-radius:6px;border:none;background:none;cursor:pointer;font-size:0.875rem;font-weight:500;transition:all 0.1s; }
+.cal-day-active:hover { background:#eff6ff;color:#2563eb; }
+.cal-day-selected { background:#2563eb!important;color:white!important; }
+.cal-day-disabled { color:#cbd5e1;cursor:not-allowed; }
+.payment-option { display:flex;align-items:center;gap:0.875rem;padding:0.875rem;border-radius:0.75rem;border:2px solid #e2e8f0;cursor:pointer;transition:border-color 0.15s; }
+.payment-option.selected { border-color:#2563eb;background:#eff6ff; }
+.payment-icon { font-size:1.5rem; }
+.radio-circle { width:18px;height:18px;border-radius:50%;border:2px solid #cbd5e1;transition:all 0.15s; }
+.radio-selected { border-color:#2563eb;background:#2563eb;box-shadow:inset 0 0 0 4px white; }
+.summary-row { display:flex;justify-content:space-between;align-items:center;font-size:0.9375rem;margin-bottom:0.375rem; }
+.modal-overlay { position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:1000;padding:1rem; }
+.modal-box { background:white;border-radius:1rem;padding:1.5rem;width:100%;max-width:400px; }
+.worker-summary { padding: 0.5rem; }
+.avatar-blue { background:#2563eb; }
+.avatar-initial { color:white; font-weight:700; }
+.worker-name { font-weight:700; color:#1e293b; }
+.worker-rate { font-size:0.875rem; color:#64748b; }
+.card-subtitle { font-weight:600; color:#1e293b; margin-bottom:1rem; }
+.month-label { font-weight:600; }
+.hours-info { margin-top:0.75rem; padding:0.75rem; background:#eff6ff; border-radius:0.5rem; font-size:0.875rem; color:#2563eb; font-weight:600; }
+.mt-label { margin-top:0.875rem; }
+.no-resize { resize: none; }
+.muted-text { font-size:0.875rem; color:#64748b; margin-bottom:0.75rem; }
+.pm-label { font-weight:600; font-size:0.9375rem; }
+.pm-details { font-size:0.8125rem; color:#64748b; }
+.summary-card { background:#f0fdf4; border-color:#a7f3d0; }
+.summary-warning { color:#ef4444; font-size:0.875rem; }
+.summary-success { color:#10b981; font-size:0.875rem; }
+.summary-total { border-top:1px solid #a7f3d0; margin-top:0.75rem; padding-top:0.75rem; display:flex; justify-content:space-between; align-items:center; }
+.total-label { font-weight:700; font-size:1.0625rem; }
+.total-amount { font-weight:800; font-size:1.25rem; color:#2563eb; }
+.error-box { background:#fee2e2; color:#991b1b; padding:0.75rem; border-radius:0.5rem; font-size:0.875rem; }
+.spinner { border: 3px solid rgba(0,0,0,0.08); border-top-color: #2563eb; border-radius:50%; width:28px; height:28px; animation: spin 1s linear infinite; }
+.spinner-sm { width:18px; height:18px; border-width:2px; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 640px) {
+  .max-w-2xl { padding: 0 1rem; }
+}
+</style>
