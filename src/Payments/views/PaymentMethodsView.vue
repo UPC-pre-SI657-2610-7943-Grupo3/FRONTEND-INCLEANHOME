@@ -1,16 +1,21 @@
 <template>
+<!-- Payment methods view template -->
   <div class="view-container">
     <div class="view-header">
+<!-- View header -->
       <h1 class="page-title">{{ t('nav.payments') }}</h1>
       <p class="page-subtitle">{{ t('payments.subtitle') }}</p>
     </div>
 
     <div v-if="loading" class="loader-wrapper">
+<!-- Loading spinner -->
       <div class="spinner spinner-lg"></div>
     </div>
 
     <div v-else class="grid-layout">
+<!-- Main grid layout -->
       <!-- Left side: Existing payment methods -->
+<!-- Existing payment methods section -->
       <div class="column-layout">
         <div v-if="methods.length" class="card shadow-sm border-box">
           <h3 class="card-title">{{ t('payments.saved') }}</h3>
@@ -32,8 +37,10 @@
       </div>
 
       <!-- Right side: Add new method & Info box -->
+<!-- Add new method and info section -->
       <div class="column-layout">
         <!-- Add new method -->
+<!-- Add new payment method form -->
         <div class="card shadow-sm border-box">
           <h3 class="card-title">{{ t('payments.addNew') }}</h3>
           <div class="form-list">
@@ -70,6 +77,7 @@
         </div>
 
         <!-- Info box -->
+<!-- Security info box -->
         <div class="card secure-card">
           <div class="secure-content">
             <span class="secure-icon">🔒</span>
@@ -85,19 +93,24 @@
 </template>
 
 <script setup>
+// Payment methods view script setup
 import { ref, computed, onMounted } from "vue";
+// Imports for Vue and utilities
 import { useI18n } from "vue-i18n";
 import { useToastStore } from "../../Shared/stores/toast.js";
 import api from "../../Shared/api.js";
 
 const { t } = useI18n();
+// Initialize i18n
 const toast = useToastStore();
 const methods = ref([]);
 const loading = ref(true);
 const saving = ref(false);
 const error = ref("");
+// Reactive state variables
 
 const form = ref({ type: "yape", label: "", details: "", isDefault: false });
+// Form data object
 
 const paymentTypes = computed(() => ({
   cash: t("booking.paymentTypes.cash"),
@@ -106,12 +119,15 @@ const paymentTypes = computed(() => ({
   plin: t("booking.paymentTypes.plin"),
   bank_transfer: t("booking.paymentTypes.bank_transfer"),
 }));
+// Computed payment types
 
 function paymentIcon(type) {
+// Function to get payment icon
   return { cash: "💵", card: "💳", yape: "📱", plin: "📲", bank_transfer: "🏦" }[type] || "💰";
 }
 
 async function addMethod() {
+// Async function to add payment method
   if (!form.value.label) return;
   saving.value = true;
   error.value = "";
@@ -126,18 +142,21 @@ async function addMethod() {
 }
 
 async function setDefault(id) {
+// Async function to set default method
   await api.patch(`/payments/methods/${id}/default`);
   methods.value.forEach(m => { m.isDefault = m.id === id; });
   toast.success(t("common.success"));
 }
 
 async function deleteMethod(id) {
+// Async function to delete method
   await api.delete(`/payments/methods/${id}`);
   methods.value = methods.value.filter(m => m.id !== id);
   toast.success(t("common.success"));
 }
 
 onMounted(async () => {
+// On mounted lifecycle hook
   try {
     const { data } = await api.get("/payments/methods");
     methods.value = data;
@@ -146,6 +165,7 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/* Payment methods view styles */
 .view-container {
   max-width: 1024px;
   margin: 1rem auto 0;
