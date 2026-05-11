@@ -1,7 +1,9 @@
 <template>
+<!-- Register form template -->
   <div class="auth-wrapper auth-bg">
     <div class="auth-container">
       <!-- Logo -->
+<!-- Logo section -->
       <div class="auth-header">
         <router-link to="/login" class="logo-wrapper-link">
           <div class="logo-small">
@@ -12,6 +14,7 @@
       </div>
 
       <!-- Step 1: Select role -->
+<!-- Role selection step -->
       <Transition name="fade" mode="out-in">
         <div v-if="step === 1" class="card card-elevated">
           <h2 class="card-title small">{{ t('auth.registerTitle') }}</h2>
@@ -39,12 +42,14 @@
         </div>
 
         <!-- Step 2: Fill form -->
+<!-- Form filling step -->
         <div v-else-if="step === 2" class="card card-elevated">
           <button @click="step = 1" class="back-btn">← {{ t('common.back') }}</button>
           <h2 class="card-title">{{ selectedRole === 'client' ? t('auth.client') : t('auth.worker') }} — {{ t('auth.registerTitle') }}</h2>
 
           <form @submit.prevent="handleRegister" class="auth-form">
             <!-- Common fields -->
+<!-- Common registration fields -->
             <div class="form-grid">
               <div class="form-group">
                 <label class="label">{{ t('auth.name') }}</label>
@@ -65,6 +70,7 @@
             </div>
 
             <!-- Worker-specific fields -->
+<!-- Worker-specific fields -->
             <template v-if="selectedRole === 'worker'">
               <div class="form-grid">
                 <div class="form-group">
@@ -134,29 +140,37 @@
 </template>
 
 <script setup>
+// Register view script setup
 import { ref, computed } from "vue";
+// Imports for Vue and utilities
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { useAuthStore } from "../../Shared/stores/auth.js";
 import api from "../../Shared/api.js";
 
 const { t, locale } = useI18n();
+// Initialize i18n
 const router = useRouter();
 const auth = useAuthStore();
+// Initialize router and auth store
 
 const step = ref(1);
 const selectedRole = ref("");
 const loading = ref(false);
 const error = ref("");
+// Reactive state variables
 
 const form = ref({
   name: "", email: "", password: "", phone: "",
   age: 25, gender: "female", serviceTypes: [], zones: [],
   hourlyRate: 25, experienceYears: 1, bio: "",
 });
+// Form data object
 
 function toggleLang() { locale.value = locale.value === "es" ? "en" : "es"; }
+// Language toggle function
 function selectRole(role) { selectedRole.value = role; }
+// Role selection function
 
 const serviceOptions = computed(() => [
   { value: "limpieza_general", label: t("worker.services.limpieza_general") },
@@ -168,14 +182,17 @@ const serviceOptions = computed(() => [
   { value: "jardineria", label: t("worker.services.jardineria") },
   { value: "limpieza_profunda", label: t("worker.services.limpieza_profunda") },
 ]);
+// Computed service options
 
 const zoneOptions = computed(() => [
   "miraflores", "san_isidro", "surco", "la_molina", "barranco", "san_borja",
   "lince", "jesus_maria", "pueblo_libre", "magdalena", "san_miguel", "callao",
   "los_olivos", "san_martin", "ate", "comas"
 ].map(v => ({ value: v, label: t(`worker.zones.${v}`) })));
+// Computed zone options
 
 async function handleRegister() {
+// Async register function
   if (selectedRole.value === "worker" && form.value.serviceTypes.length === 0) {
     error.value = "Selecciona al menos un tipo de servicio";
     return;
@@ -203,6 +220,7 @@ async function handleRegister() {
 </script>
 
 <style scoped>
+/* Register view styles */
 .auth-wrapper { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem 1rem; }
 .auth-bg { background: linear-gradient(135deg,#eff6ff 0%,#f0fdf4 100%); }
 

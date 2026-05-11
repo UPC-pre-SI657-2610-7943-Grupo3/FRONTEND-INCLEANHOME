@@ -1,7 +1,9 @@
 <template>
+<!-- Upload documents template -->
   <div class="auth-wrapper auth-bg-upload">
     <div class="auth-container">
       <div class="auth-header">
+<!-- Header section -->
         <div class="header-emoji">📋</div>
         <h1 class="header-title">{{ t('auth.uploadDocuments') }}</h1>
         <p class="header-subtitle">{{ t('auth.documentsInfo') }}</p>
@@ -9,6 +11,7 @@
 
       <div class="card card-elevated">
         <!-- Background check -->
+<!-- Background check document section -->
         <div class="doc-section mb-6">
           <div class="doc-header">
             <div :class="['doc-icon', docs.backgroundCheck ? 'doc-done' : 'doc-pending']">
@@ -32,6 +35,7 @@
         </div>
 
         <!-- Experience doc -->
+<!-- Experience document section -->
         <div class="doc-section mt-6">
           <div class="doc-header">
             <div :class="['doc-icon', docs.experience ? 'doc-done' : 'doc-pending']">
@@ -57,6 +61,7 @@
         <div v-if="error" class="error-box">{{ error }}</div>
 
         <div v-if="docs.backgroundCheck && docs.experience" class="success-section mt-4">
+<!-- Success section when both uploaded -->
           <div class="info-box">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
             <span class="info-text">{{ t('auth.verificationPending') }}</span>
@@ -67,6 +72,7 @@
         </div>
 
         <div v-if="uploading" class="uploading-msg">
+<!-- Uploading message -->
           <div class="spinner spinner-xs"></div>
           Subiendo...
         </div>
@@ -76,38 +82,47 @@
 </template>
 
 <script setup>
+// Upload documents view script setup
 import { ref } from "vue";
+// Imports for Vue and utilities
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { useAuthStore } from "../../Shared/stores/auth.js";
 import api from "../../Shared/api.js";
 
 const { t } = useI18n();
+// Initialize i18n
 const router = useRouter();
 const auth = useAuthStore();
+// Initialize router and auth store
 
 const bgInput = ref(null);
 const expInput = ref(null);
 const uploading = ref(false);
 const error = ref("");
 const docs = ref({ backgroundCheck: false, experience: false });
+// Reactive references for inputs and state
 
 function triggerUpload(type) {
+// Function to trigger file input click
   if (type === "background_check") bgInput.value?.click();
   else expInput.value?.click();
 }
 
 async function handleDrop(e, type) {
+// Handle file drop event
   const file = e.dataTransfer.files[0];
   if (file) await uploadFile(file, type);
 }
 
 async function handleFileSelect(e, type) {
+// Handle file selection from input
   const file = e.target.files[0];
   if (file) await uploadFile(file, type);
 }
 
 async function uploadFile(file, type) {
+// Async function to upload file
   if (!file.name.endsWith(".pdf")) {
     error.value = "Solo se aceptan archivos PDF";
     return;
@@ -135,12 +150,14 @@ async function uploadFile(file, type) {
 }
 
 function goToLogin() {
+// Function to go back to login
   auth.clearAuth();
   router.push("/login");
 }
 </script>
 
 <style scoped>
+/* Upload documents view styles */
 .auth-wrapper { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem 1rem; }
 .auth-bg-upload { background: linear-gradient(135deg,#ede9fe 0%,#f0fdf4 100%); }
 
